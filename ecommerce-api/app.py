@@ -1,9 +1,10 @@
 from flask import Flask,request,url_for,render_template
 from utils import cache,database
 from sqlalchemy.exc import SQLAlchemyError
-
+from routes.products import stocks
 
 app = Flask(__name__)
+app.register_blueprint(stocks)
 
 @app.route('/health')
 def check_health():

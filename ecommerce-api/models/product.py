@@ -1,6 +1,6 @@
 from utils.database import Base
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import Column,DateTime,Integer
+from sqlalchemy import Column,DateTime,Integer,Float
 from datetime import datetime
 import uuid
 
@@ -9,6 +9,7 @@ class Products(Base):
     product_id = Column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4,index=True)
     stock_count = Column(Integer,nullable=False,default=0)
     last_updated = Column(DateTime,onupdate=datetime.utcnow)
+    price  = Column(Float(10))
 
     def __repr__(self):
         return f"<product {self.product_id} count: {self.stock_count}>"

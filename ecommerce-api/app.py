@@ -3,10 +3,12 @@ from utils import cache,database
 from sqlalchemy.exc import SQLAlchemyError
 from routes.products import stocks
 from routes.orders import order_bp
+from routes.payments import payment_bp
 
 app = Flask(__name__)
 app.register_blueprint(stocks)
 app.register_blueprint(order_bp)
+app.register_blueprint(payment_bp)
 
 @app.route('/health')
 def check_health():

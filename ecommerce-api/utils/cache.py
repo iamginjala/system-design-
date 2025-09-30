@@ -20,7 +20,7 @@ def test_connection():
 
 def set_data(product_id,my_dict):
     try:
-        redis_client.setex(f"product:{product_id}",3600,json.dumps(my_dict))
+        redis_client.setex(f"product:{product_id}",60,json.dumps(my_dict))
         print(f" data stored successfully under {product_id}")
         return True
     except Exception as e:

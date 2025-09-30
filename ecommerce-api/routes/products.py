@@ -14,8 +14,7 @@ def get_product_details(product_id):
         if isinstance(cached_data,dict): # vlaid data found
             return jsonify({'status':True,'data':cached_data,'source':'cache'}),200
         with SessionLocal() as db:
-            uuid_obj = UUID(product_id)  # Test UUID conversion separately
-            result_db = db.query(Products).filter(Products.product_id== uuid_obj).first()
+            result_db = db.query(Products).filter(Products.product_id== UUID(product_id)).first()
             if not result_db:
                 return jsonify({'status':False,'error':'No datafound for this product_id'}),404
             prod_data = {'product_id':str(result_db.product_id),

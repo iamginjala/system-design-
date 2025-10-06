@@ -7,6 +7,7 @@ from routes.payments import payment_bp
 from graphql_api.schema import schema
 from strawberry.flask.views import GraphQLView
 
+
 app = Flask(__name__)
 app.register_blueprint(stocks)
 app.register_blueprint(order_bp)

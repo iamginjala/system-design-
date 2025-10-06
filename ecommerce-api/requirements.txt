@@ -1,6 +1,6 @@
 flask
-psycopg2-binary 
-redis 
-python-dotenv 
+psycopg2-binary
+redis
+python-dotenv
 flask-sqlalchemy
-strawberry-graphql 
+strawberry-graphql[flask] 

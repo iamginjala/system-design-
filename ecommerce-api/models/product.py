@@ -8,7 +8,7 @@ class Products(Base):
     __tablename__ = 'products'
     product_id = Column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4,index=True)
     stock_count = Column(Integer,nullable=False,default=0)
-    last_updated = Column(DateTime,onupdate=datetime.utcnow)
+    last_updated = Column(DateTime,default=datetime.utcnow,onupdate=datetime.utcnow)
     price  = Column(Float(10))
 
     def __repr__(self):

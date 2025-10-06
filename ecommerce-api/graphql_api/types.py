@@ -20,4 +20,14 @@ def product_to_graphql(db_product: Products) -> Product:
         last_updated= db_product.last_updated # type: ignore
     )
 
+@strawberry.input
+class ProductInput:
+    price: float
+    stock_count: int
+
+@strawberry.input
+class ProductUpdateInput:
+    product_id: str
+    stock_count: Optional[int]
+    price: Optional[float]
 

@@ -5,17 +5,44 @@ import strawberry
 from typing import Optional
 from uuid import UUID
 from utils.cache import get_data,set_data
+import redis
+import json
+import os 
+
+
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'redis'),
+    port=int(os.getenv('REDIS_PORT', 6379)),
+    db=0,
+    decode_responses=True
+)
+
+
 @strawberry.type 
 class Query:
     @strawberry.field
     def get_products(self) -> list[Product]:
-        with SessionLocal() as db:
-            prods = db.query(Products).all()
+        cached_data = redis_client.get("products:all")
+        if cached_data is None:
+            print("Cache miss: querying from database")
+            with SessionLocal() as db:
+                result  = db.query(Products).all()
+                res_dict = [
+                    {
+                        "product_id": str(r.product_id),
+                        "stock_count": r.stock_count,
+                        "price": r.price,
+                        "last_updated": r.last_updated.isoformat() if r.last_updated else None  # type: ignore
+                    } for r in result
+                ]
+                if res_dict:  # Only cache if there's data
+                    redis_client.setex("products:all", 60, json.dumps(res_dict))
+                return [product_to_graphql(prod) for prod in result]
+        else:
+            print("cache hit: retrieved from redis")
+            res = json.loads(cached_data)  # type: ignore
+            return [product_to_graphql(r) for r in res] 
 
-            return [
-                product_to_graphql(prod)
-                for prod in prods
-            ]
     @strawberry.field
     def get_products_by_id(self,id: str) -> Optional[Product]:
         cached = get_data(id)

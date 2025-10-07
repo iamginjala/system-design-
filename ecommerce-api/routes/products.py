@@ -28,5 +28,4 @@ def get_product_details(product_id):
     except ValueError as VE:
         return jsonify({'status': False,'error': 'Not a valid product_id'}),400
     except Exception as e:
-        return jsonify({'status': False, 'message': 'found an unexpected response'}),500
-        
+        return jsonify({'status': False, 'message': 'found an unexpected response'}),500      

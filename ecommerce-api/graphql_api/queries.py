@@ -7,7 +7,8 @@ from uuid import UUID
 from utils.cache import get_data,set_data
 import redis
 import json
-import os 
+import os
+from datetime import datetime 
 
 
 redis_client = redis.Redis(
@@ -41,14 +42,24 @@ class Query:
         else:
             print("cache hit: retrieved from redis")
             res = json.loads(cached_data)  # type: ignore
-            return [product_to_graphql(r) for r in res] 
+            return [Product(
+                product_id=r["product_id"],
+                stock_count=r["stock_count"],
+                price=r["price"],
+                last_updated=datetime.fromisoformat(r["last_updated"]) if r.get("last_updated") else None
+            ) for r in res] 
 
     @strawberry.field
     def get_products_by_id(self,id: str) -> Optional[Product]:
         cached = get_data(id)
         if isinstance(cached,dict):
             print("cache hit - Retrieved from redis")
-            return product_to_graphql(cached) #type: ignore
+            return Product(
+                product_id=cached["product_id"],
+                stock_count=cached["stock_count"],
+                price=cached["price"],
+                last_updated=datetime.fromisoformat(cached["last_updated"]) if cached.get("last_updated") else None
+            )
         else:
             print("Cache miss- Querying from database")
             with SessionLocal() as db:

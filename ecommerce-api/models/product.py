@@ -3,6 +3,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column,DateTime,Integer,Float
 from datetime import datetime
 import uuid
+from sqlalchemy.orm import relationship
+
 
 class Products(Base):
     __tablename__ = 'products'
@@ -10,6 +12,7 @@ class Products(Base):
     stock_count = Column(Integer,nullable=False,default=0)
     last_updated = Column(DateTime,default=datetime.utcnow,onupdate=datetime.utcnow)
     price  = Column(Float(10))
+    order_items = relationship('OrderItem',back_populates='product')
 
     def __repr__(self):
         return f"<product {self.product_id} count: {self.stock_count}>"

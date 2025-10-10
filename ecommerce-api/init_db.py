@@ -2,6 +2,7 @@ from utils.database import engine,Base
 from models.order import Orders
 from models.product import Products
 from models.payment import Payments
+from models.order_item import OrderItem
 
 def init_database():
     """ create all database tables"""

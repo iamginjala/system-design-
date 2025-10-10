@@ -1,5 +1,7 @@
 from .types import Product,product_to_graphql
+from .types import Order,orders_to_graphql
 from models.product import Products
+from models.order import Orders 
 from utils.database import SessionLocal
 import strawberry
 from typing import Optional
@@ -48,7 +50,6 @@ class Query:
                 price=r["price"],
                 last_updated=datetime.fromisoformat(r["last_updated"]) if r.get("last_updated") else None
             ) for r in res] 
-
     @strawberry.field
     def get_products_by_id(self,id: str) -> Optional[Product]:
         cached = get_data(id)
@@ -77,6 +78,20 @@ class Query:
                     return None
                 except ValueError as e:
                     return None
+    @strawberry.field
+    def get_orders(self) -> list[Order]:
+        with SessionLocal() as db:
+            result = db.query(Orders).all()
+            return [orders_to_graphql(order) for order in result]
+    @strawberry.field
+    def get_order_by_id(self,order_id:str) -> Optional[Order]:
+        with SessionLocal() as db:
+            result = db.query(Orders).filter(Orders.order_id == UUID(order_id)).first()
+
+            if result:
+                return orders_to_graphql(result)
+            return None
+
 
 
 

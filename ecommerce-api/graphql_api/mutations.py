@@ -3,10 +3,13 @@ from .types import Product,ProductInput,ProductUpdateInput,product_to_graphql
 from utils.database import SessionLocal,Base
 from uuid import UUID,uuid4
 from models.product import Products
+from models.order import Orders
 from typing import Optional
 from utils.cache import delete_data
 import redis
 import os
+from .types import Order,Orderitem,orders_to_graphql,orderitem_to_graphql,OrderItemInput,CreateOrderInput
+from models.order_item import OrderItem
 
 redis_client = redis.Redis(host=os.getenv('REDIS_HOST','redis'),port=int(os.getenv("REDIS_PORT", 6379)),db=0,decode_responses=True)
 
@@ -66,8 +69,56 @@ class Mutation:
             redis_client.delete("products:all")
 
             return True
-             
-             
+        
+    @strawberry.mutation
+    def create_order(self, input: CreateOrderInput) -> Order:
+        with SessionLocal() as db:
+            # Step 1: Calculate total and validate items
+            total_amount = 0.0
+            order_items = []
+        
+            for item in input.items:
+                # Step 2: Query product from database
+                product = db.query(Products).filter(Products.product_id == UUID(item.product_id)).first()
+            
+                # Step 3: Validate product exists
+                if not product:
+                    raise ValueError(f"Product {item.product_id} not found")
+            
+                # Step 4: Validate quantity
+                if item.quantity <= 0:
+                    raise ValueError("Quantity must be positive")
+            
+                # Step 5: Calculate item total
+                item_total = product.price * item.quantity
+                total_amount += item_total
+            
+                # Step 6: Create OrderItem (you'll need to import OrderItem model)
+                order_item = OrderItem(
+                    id=uuid4(),
+                    product_id=UUID(item.product_id),
+                    quantity=item.quantity,
+                    price_at_purchase=product.price
+                    )
+                order_items.append(order_item)
+        
+            # Step 7: Create the order
+            new_order = Orders(
+                order_id=uuid4(),
+                customer_id=UUID(input.customer_id),
+                total_amount=total_amount,
+                status="pending"  # Don't forget to set initial status!
+                )
+        
+            # Step 8: Add items to order
+            new_order.items = order_items
+        
+            # Step 9: Save to database
+            db.add(new_order)
+            db.commit()
+            db.refresh(new_order)
+        return orders_to_graphql(new_order)
+
 
 
 

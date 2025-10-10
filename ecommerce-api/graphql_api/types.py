@@ -68,3 +68,13 @@ def orderitem_to_graphql(db_orderitems: OrderItem) -> Orderitem:
                      quantity=db_orderitems.quantity, #type: ignore
                      price_at_purchase=db_orderitems.price_at_purchase, #type: ignore
                      product=product_to_graphql(db_orderitems.product))
+
+@strawberry.input
+class OrderItemInput:
+    product_id: str
+    quantity: int
+
+@strawberry.input
+class CreateOrderInput:
+    customer_id: str
+    items: list[OrderItemInput]

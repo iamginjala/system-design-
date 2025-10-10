@@ -117,7 +117,7 @@ class Mutation:
             db.add(new_order)
             db.commit()
             db.refresh(new_order)
-        return orders_to_graphql(new_order)
+            return orders_to_graphql(new_order)
 
 
 

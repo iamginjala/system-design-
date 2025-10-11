@@ -10,4 +10,5 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+CMD python init_db.py && python app.py
+

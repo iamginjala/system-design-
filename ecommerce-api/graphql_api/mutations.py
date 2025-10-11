@@ -85,14 +85,22 @@ class Mutation:
                 # Step 3: Validate product exists
                 if not product:
                     raise ValueError(f"Product {item.product_id} not found")
-            
+                
+                #step 3.5: validate sufficient stock
+                stock_count = getattr(product, "stock_count", None)
+                if stock_count is not None and stock_count < item.quantity:
+                    raise ValueError(f"insufficient stock for product {item.product_id}. Available: {stock_count}, Requested: {item.quantity}")            
+                
                 # Step 4: Validate quantity
                 if item.quantity <= 0:
                     raise ValueError("Quantity must be positive")
+                # step 4.5: Decrease stock count
+                product.stock_count -= item.quantity #type: ignore
             
                 # Step 5: Calculate item total
                 item_total = product.price * item.quantity
                 total_amount += item_total
+                
             
                 # Step 6: Create OrderItem (you'll need to import OrderItem model)
                 order_item = OrderItem(
@@ -102,6 +110,7 @@ class Mutation:
                     price_at_purchase=product.price
                     )
                 order_items.append(order_item)
+
         
             # Step 7: Create the order
             new_order = Orders(

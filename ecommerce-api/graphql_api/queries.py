@@ -7,18 +7,11 @@ import strawberry
 from typing import Optional
 from uuid import UUID
 from utils.cache import get_data,set_data
-import redis
+from utils.cache import redis_client
 import json
-import os
 from datetime import datetime 
 
 
-redis_client = redis.Redis(
-    host=os.getenv('REDIS_HOST', 'redis'),
-    port=int(os.getenv('REDIS_PORT', 6379)),
-    db=0,
-    decode_responses=True
-)
 
 
 @strawberry.type 

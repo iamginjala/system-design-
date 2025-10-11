@@ -6,12 +6,13 @@ from models.product import Products
 from models.order import Orders
 from typing import Optional
 from utils.cache import delete_data
-import redis
-import os
+# import redis
+# import os
+from utils.cache import redis_client
 from .types import Order,Orderitem,orders_to_graphql,orderitem_to_graphql,OrderItemInput,CreateOrderInput
 from models.order_item import OrderItem
 
-redis_client = redis.Redis(host=os.getenv('REDIS_HOST','redis'),port=int(os.getenv("REDIS_PORT", 6379)),db=0,decode_responses=True)
+# redis_client = redis.Redis(host=os.getenv('REDIS_HOST','redis'),port=int(os.getenv("REDIS_PORT", 6379)),db=0,decode_responses=True)
 
 @strawberry.type
 class Mutation:

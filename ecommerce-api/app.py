@@ -1,9 +1,7 @@
 from flask import Flask,request,url_for,render_template
 from utils import cache,database
 from sqlalchemy.exc import SQLAlchemyError
-from routes.products import stocks
-from routes.orders import order_bp
-from routes.payments import payment_bp
+from routes import stocks,order_bp,payment_bp,auth_bp
 from graphql_api.schema import schema
 from strawberry.flask.views import GraphQLView
 
@@ -12,6 +10,7 @@ app = Flask(__name__)
 app.register_blueprint(stocks)
 app.register_blueprint(order_bp)
 app.register_blueprint(payment_bp)
+app.register_blueprint(auth_bp)
 
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view("graphql_view",schema=schema))
 

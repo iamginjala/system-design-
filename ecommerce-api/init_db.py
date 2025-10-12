@@ -3,6 +3,7 @@ from models.order import Orders
 from models.product import Products
 from models.payment import Payments
 from models.order_item import OrderItem
+from models.user import User
 
 def init_database():
     """ create all database tables"""

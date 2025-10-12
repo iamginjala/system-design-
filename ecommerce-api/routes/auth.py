@@ -30,16 +30,18 @@ def register():
                 if not data:
                     return jsonify({'status': False, 'message': 'No data provided'}), 400
                 email = data.get('email')
+                if not email:
+                    return jsonify({'status': False, 'message': 'Email is required'}),400
                 if not is_valid_email(email):
                     return jsonify({'status': False, 'message': 'Please enter valid email'}), 400
                 result = db.query(User).filter(User.email == email).first()
                 if result is not None:
                     return jsonify({'status': False, 'message': 'Already have an account with the email'}), 409
-
                 password = data.get('password')
+                if not password:
+                    return jsonify({'status': False, 'message': 'Password is required'}), 400
                 if not validate_password(password):
                     return jsonify({'status': False, 'message': 'Please enter valid password'}), 400
-
                 new_user = User(
                     email=email,
                     name=data.get('name'),

@@ -1,9 +1,5 @@
 from utils.database import engine,Base
-from models.order import Orders
-from models.product import Products
-from models.payment import Payments
-from models.order_item import OrderItem
-from models.user import User
+from models import User, Products,OrderItem,Orders,Payments
 
 def init_database():
     """ create all database tables"""

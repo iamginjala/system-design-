@@ -4,6 +4,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from routes import stocks,order_bp,payment_bp,auth_bp
 from graphql_api.schema import schema
 from strawberry.flask.views import GraphQLView
+import os 
+from dotenv import load_dotenv
+
 
 
 app = Flask(__name__)
@@ -14,6 +17,10 @@ app.register_blueprint(auth_bp)
 
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view("graphql_view",schema=schema))
 
+
+load_dotenv()
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['JWT_EXPIRATION_HOURS'] = int(os.getenv('JWT_EXPIRATION_HOURS',24))
 
 @app.route('/health')
 def check_health():

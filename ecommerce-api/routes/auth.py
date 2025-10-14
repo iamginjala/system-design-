@@ -76,13 +76,12 @@ def generate_token(user):
 def decode_token(token):
     secret_key = current_app.config['SECRET_KEY']
     try:
-        response = jwt.decode(token,secret_key,algorithms=['HS256'])
-        return response
+        response = jwt.decode(token, secret_key, algorithms=['HS256'])
+        return {'valid': True, 'payload': response}
     except jwt.ExpiredSignatureError:
-        return "Token Expired fetch new token"
-
+        return {'valid': False, 'error': 'Token expired'}
     except jwt.InvalidTokenError:
-        return "Invalid token please check your token"
+        return {'valid': False, 'error': 'Invalid token'}
     
 @auth_bp.route('/login',methods=['POST'])
 def login():
@@ -109,7 +108,7 @@ def login():
             result_db.last_login = datetime.utcnow() #type: ignore
             db.commit()
 
-            return jsonify({'status': True, 'message': "Login sucessful",'user':result_db.to_dict(),'token':token}), 200
+            return jsonify({'status': True, 'message': "Login successful",'user':result_db.to_dict(),'token':token}), 200
         except DatabaseError as dbe:
             return jsonify({'status': False, 'error': f"Database Error: {dbe}"}), 400
         except Exception as e:

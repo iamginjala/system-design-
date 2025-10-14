@@ -3,10 +3,13 @@ from models import User
 from utils.database import SessionLocal
 from sqlalchemy.exc import IntegrityError,DatabaseError
 import re
-import uuid
-from datetime import datetime
+from datetime import datetime,timedelta
+from flask import current_app
+import jwt
 
 auth_bp = Blueprint('auth',__name__,url_prefix='/auth')
+
+
 
 def is_valid_email(email):
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -55,3 +58,66 @@ def register():
             except Exception as e:
                 return jsonify({'status': False, 'message': f"{e}"}), 400
 
+
+def generate_token(user):
+    expiration = current_app.config['JWT_EXPIRATION_HOURS']
+    secret_key = current_app.config['SECRET_KEY']
+    payload = {
+        'user_id': str(user.user_id),
+        'name': user.name,
+        'role': user.role,
+        'exp': (datetime.utcnow() + timedelta(hours=expiration)).timestamp(),
+        'iat': datetime.utcnow().timestamp()
+    }
+    token = jwt.encode(payload,secret_key,algorithm='HS256')
+
+    return token
+
+def decode_token(token):
+    secret_key = current_app.config['SECRET_KEY']
+    try:
+        response = jwt.decode(token,secret_key,algorithms=['HS256'])
+        return response
+    except jwt.ExpiredSignatureError:
+        return "Token Expired fetch new token"
+
+    except jwt.InvalidTokenError:
+        return "Invalid token please check your token"
+    
+@auth_bp.route('/login',methods=['POST'])
+def login():
+    data = request.get_json()
+    with SessionLocal() as db:
+        try:
+            if not data:
+                return jsonify({'status': False, 'message': 'No data provided'}), 400
+            email = data.get('email')
+            password = data.get('password')
+            if not email:
+                return jsonify({'status': False, 'message': 'Email is required'}),400
+            if not password:
+                return jsonify({'status': False, 'message': 'Email and password are required'}), 400
+            result_db = db.query(User).filter(User.email == email.lower()).first()
+
+            if result_db is None:
+                return jsonify({"status":False,"message":"Invalid credentials"}),401
+            if not result_db.check_password(password):
+                return jsonify({"status":False,"message":"Invalid credentials"}),401
+            
+            token = generate_token(result_db)
+
+            result_db.last_login = datetime.utcnow() #type: ignore
+            db.commit()
+
+            return jsonify({'status': True, 'message': "Login sucessful",'user':result_db.to_dict(),'token':token}), 200
+        except DatabaseError as dbe:
+            return jsonify({'status': False, 'error': f"Database Error: {dbe}"}), 400
+        except Exception as e:
+            return jsonify({'status': False, 'message': f"{e}"}), 400
+        
+
+
+            
+
+
+    

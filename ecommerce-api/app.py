@@ -1,4 +1,4 @@
-from flask import Flask,request,url_for,render_template
+from flask import Flask,request
 from utils import cache,database
 from sqlalchemy.exc import SQLAlchemyError
 from routes import stocks,order_bp,payment_bp,auth_bp
@@ -15,7 +15,10 @@ app.register_blueprint(order_bp)
 app.register_blueprint(payment_bp)
 app.register_blueprint(auth_bp)
 
-app.add_url_rule('/graphql', view_func=GraphQLView.as_view("graphql_view",schema=schema))
+def get_context():
+    return {"request": request}
+
+app.add_url_rule('/graphql', view_func=GraphQLView.as_view("graphql_view",schema=schema,get_context=get_context))
 
 
 load_dotenv()

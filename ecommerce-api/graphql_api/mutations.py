@@ -1,6 +1,6 @@
 import strawberry
 from .types import Product,ProductInput,ProductUpdateInput,product_to_graphql
-from utils.database import SessionLocal,Base
+from utils.database import SessionLocal
 from uuid import UUID,uuid4
 from models.product import Products
 from models.order import Orders
@@ -10,6 +10,7 @@ from utils.cache import delete_data
 # import os
 from utils.cache import redis_client
 from .types import Order,Orderitem,orders_to_graphql,orderitem_to_graphql,OrderItemInput,CreateOrderInput
+from utils.auth import get_token_from_header,verify_token,require_admin
 from models.order_item import OrderItem
 
 # redis_client = redis.Redis(host=os.getenv('REDIS_HOST','redis'),port=int(os.getenv("REDIS_PORT", 6379)),db=0,decode_responses=True)
@@ -17,22 +18,30 @@ from models.order_item import OrderItem
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_product(self,input: ProductInput) ->Product :
-        if input.price <= 0:
-            raise ValueError("Price must be positive")
-        if input.stock_count < 0:
-            raise ValueError("Stock cannot be negative")
-        new_product = Products(
-            product_id=uuid4(),
-            price=input.price,
-            stock_count=input.stock_count
-        )
-        with SessionLocal() as db:
-            db.add(new_product)
-            db.commit()
-            db.refresh(new_product)
-            redis_client.delete("products:all")
-            return product_to_graphql(new_product)
+    def create_product(self,input: ProductInput,info) ->Optional[Product] :
+        flask_request = info.context["request"]
+        token = get_token_from_header(flask_request)
+        payload = verify_token(token)
+        response = require_admin(payload)
+        if response == True:
+            if input.price <= 0:
+                raise ValueError("Price must be positive")
+            if input.stock_count < 0:
+                raise ValueError("Stock cannot be negative")
+            new_product = Products(
+                product_id=uuid4(),
+                price=input.price,
+                stock_count=input.stock_count
+            )
+            with SessionLocal() as db:
+                db.add(new_product)
+                db.commit()
+                db.refresh(new_product)
+                redis_client.delete("products:all")
+                return product_to_graphql(new_product)
+        else:
+            return None
+        
 
     @strawberry.mutation
     def update_product(self,input: ProductUpdateInput) -> Optional[Product]:

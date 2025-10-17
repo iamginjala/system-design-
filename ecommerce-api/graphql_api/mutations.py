@@ -2,16 +2,17 @@ import strawberry
 from .types import Product,ProductInput,ProductUpdateInput,product_to_graphql
 from utils.database import SessionLocal
 from uuid import UUID,uuid4
-from models.product import Products
-from models.order import Orders
+from models import OrderItem,Products,Orders,User
+# from models.product import Products
+# from models.order import Orders
 from typing import Optional
 from utils.cache import delete_data
 # import redis
 # import os
 from utils.cache import redis_client
 from .types import Order,Orderitem,orders_to_graphql,orderitem_to_graphql,OrderItemInput,CreateOrderInput
-from utils.auth import get_token_from_header,verify_token,require_admin
-from models.order_item import OrderItem
+from utils.auth import authenticate_admin,authenticate_user
+# from models.order_item import OrderItem
 
 # redis_client = redis.Redis(host=os.getenv('REDIS_HOST','redis'),port=int(os.getenv("REDIS_PORT", 6379)),db=0,decode_responses=True)
 
@@ -19,38 +20,30 @@ from models.order_item import OrderItem
 class Mutation:
     @strawberry.mutation
     def create_product(self,input: ProductInput,info) ->Optional[Product] :
-        flask_request = info.context["request"]
-        token = get_token_from_header(flask_request)
-        payload = verify_token(token)
-        response = require_admin(payload)
-        if response == True:
-            if input.price <= 0:
-                raise ValueError("Price must be positive")
-            if input.stock_count < 0:
-                raise ValueError("Stock cannot be negative")
-            new_product = Products(
-                product_id=uuid4(),
-                price=input.price,
-                stock_count=input.stock_count
-            )
-            with SessionLocal() as db:
-                db.add(new_product)
-                db.commit()
-                db.refresh(new_product)
-                redis_client.delete("products:all")
-                return product_to_graphql(new_product)
-        else:
-            return None
-        
+        authenticate_admin(info)
+        if input.price <= 0:
+            raise ValueError("Price must be positive")
+        if input.stock_count < 0:
+            raise ValueError("Stock cannot be negative")
+        new_product = Products(
+            product_id=uuid4(),
+            price=input.price,
+            stock_count=input.stock_count
+        )
+        with SessionLocal() as db:
+            db.add(new_product)
+            db.commit()
+            db.refresh(new_product)
+            redis_client.delete("products:all")
+            return product_to_graphql(new_product) 
 
     @strawberry.mutation
-    def update_product(self,input: ProductUpdateInput) -> Optional[Product]:
+    def update_product(self,input: ProductUpdateInput,info) -> Optional[Product]:
+        authenticate_admin(info)
         with SessionLocal() as db:
             new_update = db.query(Products).filter(Products.product_id == UUID(input.product_id)).first()
             if not new_update:
                 return None
-            
-            
             if input.price is not None:
                 if input.price <= 0:
                     raise ValueError("Price must be positive")
@@ -67,7 +60,8 @@ class Mutation:
             return product_to_graphql(new_update)
 
     @strawberry.mutation
-    def delete_product(self,product_id : str) -> bool:
+    def delete_product(self,product_id : str,info) -> bool:
+        authenticate_admin(info)
         with SessionLocal() as db:
             delete_product = db.query(Products).filter(Products.product_id == UUID(product_id)).first()
 
@@ -81,7 +75,8 @@ class Mutation:
             return True
         
     @strawberry.mutation
-    def create_order(self, input: CreateOrderInput) -> Order:
+    def create_order(self, input: CreateOrderInput,info) -> Order:
+        user_payload = authenticate_user(info)
         with SessionLocal() as db:
             # Step 1: Calculate total and validate items
             total_amount = 0.0
@@ -124,7 +119,7 @@ class Mutation:
             # Step 7: Create the order
             new_order = Orders(
                 order_id=uuid4(),
-                customer_id=UUID(input.customer_id),
+                customer_id=UUID(user_payload['user_id']),
                 total_amount=total_amount,
                 status="pending"  # Don't forget to set initial status!
                 )

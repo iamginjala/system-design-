@@ -1,6 +1,7 @@
 from utils.database import Base
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column,DateTime,String
+from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,6 +16,10 @@ class User(Base):
     role = Column(String(10),default='customer')
     created_at = Column(DateTime,default=datetime.utcnow)
     last_login = Column(DateTime,nullable=True)
+
+    orders = relationship('Orders',back_populates='user')
+
+
 
     def __repr__(self):
         return f"<{self.name} has successfully created account {self.created_at}>"

@@ -31,7 +31,7 @@ class User(Base):
     
     def to_dict(self):
         ans = {
-            'user_id':self.user_id,
+            'user_id':str(self.user_id),
             'name': self.name,
             'email': self.email,
             'role': self.role,

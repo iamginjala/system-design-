@@ -76,5 +76,4 @@ class OrderItemInput:
 
 @strawberry.input
 class CreateOrderInput:
-    customer_id: str
     items: list[OrderItemInput]

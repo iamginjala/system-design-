@@ -7,8 +7,6 @@ from models import OrderItem,Products,Orders,User
 # from models.order import Orders
 from typing import Optional
 from utils.cache import delete_data
-# import redis
-# import os
 from utils.cache import redis_client
 from .types import Order,Orderitem,orders_to_graphql,orderitem_to_graphql,OrderItemInput,CreateOrderInput
 from utils.auth import authenticate_admin,authenticate_user

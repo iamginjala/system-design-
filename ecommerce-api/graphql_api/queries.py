@@ -10,6 +10,7 @@ from utils.cache import get_data,set_data
 from utils.cache import redis_client
 import json
 from datetime import datetime 
+from utils.auth import authenticate_user
 
 
 
@@ -72,10 +73,16 @@ class Query:
                 except ValueError as e:
                     return None
     @strawberry.field
-    def get_orders(self) -> list[Order]:
+    def get_orders(self,info) -> list[Order]:
+        user_payload = authenticate_user(info)
+        user_id = UUID(user_payload['user_id'])
         with SessionLocal() as db:
-            result = db.query(Orders).all()
-            return [orders_to_graphql(order) for order in result]
+            if user_payload['role'] == 'admin':
+                result = db.query(Orders).all()
+                return [orders_to_graphql(order) for order in result]
+            else:
+                result = db.query(Orders).filter(Orders.customer_id == user_id).all()
+                return [orders_to_graphql(order) for order in result]
     @strawberry.field
     def get_order_by_id(self,order_id:str) -> Optional[Order]:
         with SessionLocal() as db:

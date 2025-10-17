@@ -15,10 +15,11 @@ app.register_blueprint(order_bp)
 app.register_blueprint(payment_bp)
 app.register_blueprint(auth_bp)
 
-def get_context():
-    return {"request": request}
+class CustomGraphQLView(GraphQLView):
+    def get_context(self, request, response):
+        return {"request": request}
 
-app.add_url_rule('/graphql', view_func=GraphQLView.as_view("graphql_view",schema=schema,get_context=get_context))
+app.add_url_rule('/graphql', view_func=CustomGraphQLView.as_view("graphql_view", schema=schema))
 
 
 load_dotenv()

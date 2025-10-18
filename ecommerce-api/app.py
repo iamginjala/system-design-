@@ -1,4 +1,4 @@
-from flask import Flask,request
+from flask import Flask,request,render_template
 from utils import cache,database
 from sqlalchemy.exc import SQLAlchemyError
 from routes import stocks,order_bp,payment_bp,auth_bp
@@ -53,7 +53,7 @@ def check_health():
 
 @app.route("/")
 def home():
-    return "GraphQL API is running! Visit /graphql to test it."
+    return render_template('index.html')
 
 
 if __name__ == "__main__":

@@ -26,8 +26,10 @@ class User(Base):
     
     def set_password(self,password):
         self.password_hash = generate_password_hash(password,method="scrypt",salt_length=16)
+    
     def check_password(self,password):
-        return check_password_hash(self.password_hash,password) #type: ignore
+        # Ensure the value passed to check_password_hash is a str (type checkers may see a Column at class level)
+        return check_password_hash(str(self.password_hash), password) 
     
     def to_dict(self):
         ans = {

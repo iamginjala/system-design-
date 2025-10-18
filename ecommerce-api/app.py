@@ -23,8 +23,19 @@ app.add_url_rule('/graphql', view_func=CustomGraphQLView.as_view("graphql_view",
 
 
 load_dotenv()
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-app.config['JWT_EXPIRATION_HOURS'] = int(os.getenv('JWT_EXPIRATION_HOURS',24))
+
+# Validate required environment variables
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required for JWT authentication!")
+
+app.config['SECRET_KEY'] = SECRET_KEY
+app.config['JWT_EXPIRATION_HOURS'] = int(os.getenv('JWT_EXPIRATION_HOURS', 24))
+
+# Handle Render's PostgreSQL URL format (postgres:// -> postgresql://)
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    os.environ['DATABASE_URL'] = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
 
 @app.route('/health')
 def check_health():
@@ -46,4 +57,8 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',port=5000,debug=True)
+    # Use PORT from environment (Render assigns this dynamically)
+    port = int(os.getenv('PORT', 5000))
+    # Set debug=False in production for security
+    debug = os.getenv('FLASK_ENV') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)

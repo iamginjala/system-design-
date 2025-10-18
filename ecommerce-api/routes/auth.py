@@ -100,6 +100,8 @@ def login():
             print(f"Login payload types — email: {type(email)}, password: {type(password)}")
             if not isinstance(password, str):
                 return jsonify({'status': False, 'message': 'Expected a string value for password'}), 400
+            if not isinstance(email,str):
+                return jsonify({'status':False,'message':'expected a string for email'}),400
             result_db = db.query(User).filter(User.email == email.lower()).first()
 
             if result_db is None:

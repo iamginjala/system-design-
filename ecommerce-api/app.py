@@ -8,6 +8,8 @@ import os
 from dotenv import load_dotenv
 
 
+load_dotenv()
+
 def create_app():
 
     app = Flask(__name__)
@@ -22,8 +24,6 @@ def create_app():
 
     app.add_url_rule('/graphql', view_func=CustomGraphQLView.as_view("graphql_view", schema=schema))
 
-
-    load_dotenv()
 
     # Validate required environment variables
     SECRET_KEY = os.getenv('SECRET_KEY')

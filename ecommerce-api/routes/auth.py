@@ -62,12 +62,13 @@ def register():
 def generate_token(user):
     expiration = current_app.config['JWT_EXPIRATION_HOURS']
     secret_key = current_app.config['SECRET_KEY']
+    now = datetime.utcnow()
     payload = {
         'user_id': str(user.user_id),
         'name': user.name,
         'role': user.role,
-        'exp': (datetime.utcnow() + timedelta(hours=expiration)).timestamp(),
-        'iat': datetime.utcnow().timestamp()
+        'exp': int((now + timedelta(hours=expiration)).timestamp()),
+        'iat': int(now.timestamp())
     }
     token = jwt.encode(payload,secret_key,algorithm='HS256')
 
@@ -76,12 +77,17 @@ def generate_token(user):
 def decode_token(token):
     secret_key = current_app.config['SECRET_KEY']
     try:
-        response = jwt.decode(token, secret_key, algorithms=['HS256'])
+        response = jwt.decode(
+            token,
+            secret_key,
+            algorithms=['HS256'],
+            options={"verify_iat": False}
+        )
         return {'valid': True, 'payload': response}
-    except jwt.ExpiredSignatureError:
-        return {'valid': False, 'error': 'Token expired'}
-    except jwt.InvalidTokenError:
-        return {'valid': False, 'error': 'Invalid token'}
+    except jwt.ExpiredSignatureError as e:
+        return {'valid': False, 'error': f'Token expired: {str(e)}'}
+    except jwt.InvalidTokenError as e:
+        return {'valid': False, 'error': f'Invalid token: {str(e)}'}
     
 @auth_bp.route('/login',methods=['POST'])
 def login():

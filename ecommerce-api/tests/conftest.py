@@ -86,3 +86,26 @@ def cleanup_database():
     db.query(User).filter(User.email.in_(['admin@test.com', 'user@test.com'])).delete(synchronize_session=False)
     db.commit()
     db.close()
+
+@pytest.fixture
+def test_product(client,admin_token):
+        mutation = """
+                    mutation CreateProduct($input: ProductInput!)
+                    {
+                    createProduct(input: $input){
+                    productId
+                    price
+                    stockCount
+                    }
+                    }
+                 """
+        variables = {
+            "input":{
+                "price":29.99,
+                "stockCount":100,
+            }
+        }
+        headers = {'Authorization':f'Bearer {admin_token}'}
+        response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+
+        return response.json['data']['createProduct']

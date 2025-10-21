@@ -298,3 +298,174 @@ class TestDeleteProductMutation:
         data = response.json
         assert 'errors' in data
 
+class TestCreateOrderMutation:
+    def test_create_order_normal(self, client, normal_token, test_product):
+        product_id = test_product['productId']
+
+        mutation = """
+        mutation CreateOrder($input: CreateOrderInput!) {
+            createOrder(input: $input) {
+                orderId
+                totalAmount
+                status
+            }
+        }
+        """
+
+        variables = {
+            "input": {
+                "items": [
+                    {
+                        "productId": product_id,
+                        "quantity": 2
+                    }
+                ]
+            }
+        }
+
+        headers = {'Authorization': f'Bearer {normal_token}'}
+        response = client.post('/graphql',
+            json={'query': mutation, 'variables': variables},
+            headers=headers
+        )
+
+        data = response.json
+        assert 'errors' not in data
+        assert data['data']['createOrder']['status'] == 'pending'
+        # The total should be 2 * 29.99 = 59.98
+        assert data['data']['createOrder']['totalAmount'] == 59.98
+
+    def test_create_order_admin(self,client,admin_token,test_product):
+        product_id =  test_product['productId']
+        mutation = """
+        mutation CreateOrder($input: CreateOrderInput!) {
+            createOrder(input: $input) {
+                orderId
+                totalAmount
+                status}}"""
+
+        variables = {
+            "input": {
+                "items": [
+                    {
+                        "productId": product_id,
+                        "quantity": 4
+                    }
+                ]
+            }
+        }
+        headers = {'Authorization': f'Bearer {admin_token}'}
+        response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+
+        data = response.json
+
+        assert 'errors' not in data
+        assert data['data']['createOrder']['status'] == 'pending'
+        assert data['data']['createOrder']['totalAmount'] == 119.96
+
+    def test_fails_without_token(self,client,test_product):
+        product_id =  test_product['productId']
+        mutation = """
+        mutation CreateOrder($input: CreateOrderInput!) {
+            createOrder(input: $input) {
+                orderId
+                totalAmount
+                status}}"""
+
+        variables = {
+            "input": {
+                "items": [
+                    {
+                        "productId": product_id,
+                        "quantity": 4
+                    }
+                ]
+            }
+        }
+        response = client.post('/graphql',json={'query':mutation,'variables':variables})
+
+        data = response.json
+
+        assert 'errors' in data
+        assert 'Authentication required' in str(data['errors'])
+    
+    def test_fails_with_invalid_product_id(self,client,normal_token):
+        product_id =  "12567"
+        mutation = """
+        mutation CreateOrder($input: CreateOrderInput!) {
+            createOrder(input: $input) {
+                orderId
+                totalAmount
+                status}}"""
+
+        variables = {
+            "input": {
+                "items": [
+                    {
+                        "productId": product_id,
+                        "quantity": 4
+                    }
+                ]
+            }
+        }
+        headers = {'Authorization': f'Bearer {normal_token}'}
+        response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+
+        data = response.json
+
+        assert 'errors' in data
+
+    def test_fails_with_insufficient_stock(self,client,admin_token,test_product):
+        product_id = test_product['productId']
+        mutation = """
+                    mutation UpdateProduct($input: ProductUpdateInput!)
+                    {
+                    updateProduct(input: $input){
+                    productId
+                    price
+                    stockCount
+                    }
+                    }
+                 """
+        variables = {
+            "input":{
+                "productId":product_id,
+                "price": 29.99,
+                "stockCount":0,
+            }
+        }
+        headers = {'Authorization':f'Bearer {admin_token}'}
+        response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+        mutation = """
+        mutation CreateOrder($input: CreateOrderInput!) {
+            createOrder(input: $input) {
+                orderId
+                totalAmount
+                status
+            }
+        }
+        """
+
+        variables = {
+            "input": {
+                "items": [
+                    {
+                        "productId": product_id,
+                        "quantity": 2
+                    }
+                ]
+            }
+        }
+
+        headers = {'Authorization': f'Bearer {admin_token}'}
+        response = client.post('/graphql',
+            json={'query': mutation, 'variables': variables},
+            headers=headers
+        )
+
+        data = response.json
+        assert 'errors' in data
+
+
+
+

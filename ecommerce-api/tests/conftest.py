@@ -6,7 +6,7 @@ sys.path.insert(0,os.path.abspath(os.path.join(os.path.dirname(__file__),'..')))
 
 from app import create_app
 from utils.database import SessionLocal
-from models import User
+from models import User,Products,Orders
 
 @pytest.fixture
 def app():
@@ -70,23 +70,36 @@ def normal_token(client,normal_user):
      token = data['token']
 
      return token
-@pytest.fixture(autouse=True)
-def cleanup_database():
-    """Clean up test users before each test"""
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_database_session():
+    """Clean up at start and end of entire test session"""
+    from models import User, Products, Orders, OrderItem
+    
+    # Cleanup at start of session
     db = SessionLocal()
-    # Delete test users
-    db.query(User).filter(User.email.in_(['admin@test.com', 'user@test.com'])).delete(synchronize_session=False)
+    db.query(OrderItem).delete(synchronize_session=False)
+    db.query(Orders).delete(synchronize_session=False)
+    db.query(Products).delete(synchronize_session=False)
+    db.query(User).filter(
+        (User.email.like('%@test.com')) | 
+        (User.email.like('%@gmail.com'))
+    ).delete(synchronize_session=False)
     db.commit()
     db.close()
     
-    yield  # Test runs here
+    yield  # All tests run here
     
-    # Cleanup after test too
+    # Cleanup at end of session
     db = SessionLocal()
-    db.query(User).filter(User.email.in_(['admin@test.com', 'user@test.com'])).delete(synchronize_session=False)
+    db.query(OrderItem).delete(synchronize_session=False)
+    db.query(Orders).delete(synchronize_session=False)
+    db.query(Products).delete(synchronize_session=False)
+    db.query(User).filter(
+        (User.email.like('%@test.com')) | 
+        (User.email.like('%@gmail.com'))
+    ).delete(synchronize_session=False)
     db.commit()
     db.close()
-
 @pytest.fixture
 def test_product(client,admin_token):
         mutation = """

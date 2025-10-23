@@ -159,3 +159,124 @@ class TestCustomerJourney:
         assert 'errors' not in data
         assert data['data']['getOrderById']['orderId'] == order_id
     
+class TestAdminWorkflow:
+    def test_complete_admin_flow(self,client):
+        request = client.post('/auth/register',json={
+                'email':'admin@test.com',
+                'password':'Admin@123',
+                'name': 'admin user'})
+        db = SessionLocal()
+        user = db.query(User).filter(User.email=='admin@test.com').first()
+        user.role = 'admin' #type: ignore
+        db.commit()
+        admin_customer_id = str(user.user_id),   # type: ignore
+        db.close()
+
+        response = client.post('/auth/login',json={
+            'email':'admin@test.com'
+            ,'password':'Admin@123'
+        })
+        data = response.json
+        admin_token = data['token']
+        mutation = """
+                    mutation CreateProduct($input: ProductInput!)
+                    {
+                    createProduct(input: $input){
+                    productId
+                    price
+                    stockCount
+                    }
+                    }
+                 """
+        variables = {
+            "input":{
+                "price":29.99,
+                "stockCount":100,
+            }
+        }
+        headers = {'Authorization':f'Bearer {admin_token}'}
+        response2 = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+        data = response2.json
+
+        assert response2.status_code == 200
+        assert 'errors' not in data
+        assert data['data']['createProduct']['price'] == 29.99
+        mutation2 = """
+                    mutation CreateProduct($input: ProductInput!)
+                    {
+                    createProduct(input: $input){
+                    productId
+                    price
+                    stockCount
+                    }
+                    }
+                 """
+        variables = {
+            "input":{
+                "price":19.99,
+                "stockCount":100,
+            }
+        }
+        response3 = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+        data = response3.json
+        assert response3.status_code == 200
+        assert 'errors' not in data
+        assert data['data']['createProduct']['price'] == 19.99
+
+        product_id = response2.json['data']['createProduct']['productId']
+        assert product_id is not None
+
+        update_mutation =  """
+                    mutation UpdateProduct($input: ProductUpdateInput!)
+                    {
+                    updateProduct(input: $input){
+                    productId
+                    price
+                    stockCount
+                    }
+                    }
+                 """
+        variables = {
+            "input":{
+                "productId": product_id,
+                "price": 24.99,
+                "stockCount":50,
+            }
+        }
+        update_response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+
+        data = update_response.json
+        if 'errors' in data or data['data']['updateProduct'] is None:
+            print(f"Update failed: {data}")
+    
+        assert 'errors' not in data
+        assert data['data']['updateProduct'] is not None
+        assert data['data']['updateProduct']['price'] == 24.99
+        assert response.status_code == 200
+
+        query = """
+                    {
+            getOrders {
+                orderId
+                customerId
+                          }
+                         }
+                  """
+        order_response = client.post('/graphql',json={'query':query},headers=headers)
+
+        assert 'errors' not in order_response.json
+        delete_mutation = """
+        mutation DeleteProduct($productId: String!) {
+            deleteProduct(productId: $productId)
+        }
+        """
+        
+        delete_response = client.post('/graphql', json={
+            'query': delete_mutation,
+            'variables': {'productId': product_id}
+        }, headers=headers)
+        
+        assert delete_response.json['data']['deleteProduct'] == True
+
+class TestAuthorizationBoundaries:
+    pass

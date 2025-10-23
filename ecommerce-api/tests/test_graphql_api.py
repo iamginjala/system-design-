@@ -99,7 +99,8 @@ class TestCreateProductMutation:
         assert 'Price must be positive' in str(data['errors'])
 
 class TestUpdateProductMutation:
-    def test_sucess_with_admin_token(self,client,admin_token):
+    def test_sucess_with_admin_token(self,client,admin_token,test_product):
+        product_id = test_product['productId']
         mutation = """
                     mutation UpdateProduct($input: ProductUpdateInput!)
                     {
@@ -112,7 +113,7 @@ class TestUpdateProductMutation:
                  """
         variables = {
             "input":{
-                "productId": "51f395b1-b343-4f75-a70b-d6bc66743255",
+                "productId": product_id,
                 "price": 29.99,
                 "stockCount":50,
             }
@@ -121,12 +122,16 @@ class TestUpdateProductMutation:
         response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
 
         data = response.json
-
-        assert response.status_code == 200
+        if 'errors' in data or data['data']['updateProduct'] is None:
+            print(f"Update failed: {data}")
+    
         assert 'errors' not in data
+        assert data['data']['updateProduct'] is not None
         assert data['data']['updateProduct']['price'] == 29.99
+        assert response.status_code == 200
 
-    def test_fails_without_token(self,client):
+    def test_fails_without_token(self,client,test_product):
+        product_id = test_product['productId']
         mutation = """
                     mutation UpdateProduct($input: ProductUpdateInput!)
                     {
@@ -139,7 +144,7 @@ class TestUpdateProductMutation:
                  """
         variables = {
             "input":{
-                "productId": "51f395b1-b343-4f75-a70b-d6bc66743255",
+                "productId": product_id,
                 "price": 29.99,
                 "stockCount":50,
             }
@@ -150,7 +155,8 @@ class TestUpdateProductMutation:
         assert 'errors' in data
         assert 'Authentication required' in str(data['errors'])
 
-    def test_fails_with_normal_token(self,client,normal_token):
+    def test_fails_with_normal_token(self,client,normal_token,test_product):
+        product_id = test_product['productId']
         mutation = """
                     mutation UpdateProduct($input: ProductUpdateInput!)
                     {
@@ -163,7 +169,7 @@ class TestUpdateProductMutation:
                  """
         variables = {
             "input":{
-                "productId": "51f395b1-b343-4f75-a70b-d6bc66743255",
+                "productId": product_id,
                 "price": 29.99,
                 "stockCount":50,
             }
@@ -175,7 +181,8 @@ class TestUpdateProductMutation:
         assert 'errors' in data
         assert 'Admin access required' in str(data['errors'])
     
-    def test_fails_with_negative_price(self,client,admin_token):
+    def test_fails_with_negative_price(self,client,admin_token,test_product):
+        product_id = test_product['productId']
         mutation = """
                     mutation UpdateProduct($input: ProductUpdateInput!)
                     {
@@ -188,7 +195,7 @@ class TestUpdateProductMutation:
                  """
         variables = {
             "input":{
-                "productId": "51f395b1-b343-4f75-a70b-d6bc66743255",
+                "productId": product_id,
                 "price": -29.99,
                 "stockCount":50,
             }

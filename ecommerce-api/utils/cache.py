@@ -56,6 +56,8 @@ def delete_data(product_id):
         if deleted:
             # print("deleted sucessfully")
             return 'deleted successfully'
+        else:
+            return f"no data found for {product_id}"
 
     except Exception as e:
         # print(f"No data found for this key {product_id}")

@@ -68,7 +68,7 @@ class TestDatabaseOperations:
         customer_id = data['data']['createOrder']['customerId']
         
         db = SessionLocal()
-        user = db.query(User).filter(User.email == normal_user['user']['email']).first()
+        user = db.query(User).filter(User.email == normal_user['email']).first()
         db.close()
         
         assert customer_id == str(user.user_id)  # type: ignore

@@ -243,7 +243,7 @@ class TestAdminWorkflow:
                 "stockCount":50,
             }
         }
-        update_response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+        update_response = client.post('/graphql',json={'query':update_mutation,'variables':variables},headers=headers)
 
         data = update_response.json
         if 'errors' in data or data['data']['updateProduct'] is None:
@@ -279,4 +279,100 @@ class TestAdminWorkflow:
         assert delete_response.json['data']['deleteProduct'] == True
 
 class TestAuthorizationBoundaries:
-    pass
+    def test_customer_see_only_own_orders(self,client):
+        # Register customer A
+        reg_a = client.post('/auth/register', json={
+            'email': 'customera@test.com',
+            'password': 'Password@123',
+            'name': 'Customer A'
+        })
+        print(f"Register A response: {reg_a.json}")
+
+        loginA = client.post('/auth/login', json={
+            'email': 'customera@test.com',
+            'password': 'Password@123'
+        })
+        print(f"Login A response: {loginA.json}")
+        data_A = loginA.json
+
+        # Check if login was successful
+        if 'token' not in data_A:
+            print(f"Login A failed: {data_A}")
+            assert False, f"Login failed for customer A: {data_A}"
+
+        tokenA = data_A['token']
+        
+        # Create customer B
+        reg_b = client.post('/auth/register', json={
+            'email': 'customerb@test.com',
+            'password': 'Password@123',
+            'name': 'Customer B'
+        })
+        print(f"Register B response: {reg_b.json}")
+
+        loginB = client.post('/auth/login', json={
+            'email': 'customerb@test.com',
+            'password': 'Password@123'
+        })
+        print(f"Login B response: {loginB.json}")
+        data_B = loginB.json
+
+        # Check if login was successful
+        if 'token' not in data_B:
+            print(f"Login B failed: {data_B}")
+            assert False, f"Login failed for customer B: {data_B}"
+
+        tokenB = data_B['token']
+
+        db = SessionLocal()
+        userA = db.query(User).filter(User.email == 'customera@test.com').first()
+        userB = db.query(User).filter(User.email == 'customerb@test.com').first()
+        customerA_id = str(userA.user_id)  # type: ignore
+        customerB_id = str(userB.user_id) # type: ignore
+        db.close()
+        query = """
+        {
+            getOrders {
+                orderId
+                customerId
+            }
+        }
+        """
+        headersA = {'Authorization': f'Bearer {tokenA}'}
+        ordersA = client.post('/graphql', json={'query': query}, headers=headersA)
+        
+        # Customer B queries their orders
+        headersB = {'Authorization': f'Bearer {tokenB}'}
+        ordersB = client.post('/graphql', json={'query': query}, headers=headersB)
+
+        # Verify A only sees A's orders
+        for order in ordersA.json['data']['getOrders']:
+            assert order['customerId'] == customerA_id
+        
+        # Verify B only sees B's orders
+        for order in ordersB.json['data']['getOrders']:
+            assert order['customerId'] == customerB_id
+    
+    def test_customer_cannot_create_product(self,client,normal_token):
+        mutation = """
+                    mutation CreateProduct($input: ProductInput!)
+                    {
+                    createProduct(input: $input){
+                    productId
+                    price
+                    stockCount
+                    }
+                    }
+                 """
+        variables = {
+            "input":{
+                "price":29.99,
+                "stockCount":100,
+            }
+        }
+        headers = {'Authorization' : f'Bearer {normal_token}'}
+        response = client.post('/graphql',json={'query':mutation,'variables':variables},headers=headers)
+        data = response.json
+
+        assert 'errors' in data
+        assert 'Admin access required' in str(data['errors'])

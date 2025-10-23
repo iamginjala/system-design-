@@ -35,9 +35,16 @@ def admin_user(client):
     user = db.query(User).filter(User.email=='admin@test.com').first()
     user.role = 'admin' #type: ignore
     db.commit()
+    user_data = {
+        'user_id': str(user.user_id),   # type: ignore
+        'email': user.email, # type: ignore
+        'name': user.name, # type: ignore
+        'role': user.role # type: ignore
+    
+    }
     db.close()
 
-    return user
+    return user_data
 
 @pytest.fixture
 def normal_user(client):
@@ -46,8 +53,18 @@ def normal_user(client):
         'password':'User@123',
         'name': 'normal user'
     })
+    db = SessionLocal()
+    user = db.query(User).filter(User.email== 'user@test.com').first()
+    user_data = {
+        'user_id': str(user.user_id), # type: ignore
+        'email': user.email,          # type: ignore
+        'name': user.name,            # type: ignore
+        'role': user.role             # type: ignore    
+    }
+    
+    db.close()
 
-    return request.json
+    return user_data
 
 @pytest.fixture
 def admin_token(client,admin_user):

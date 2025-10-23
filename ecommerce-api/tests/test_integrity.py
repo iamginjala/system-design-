@@ -33,7 +33,7 @@ class TestDataIntegrity:
             json={'query': mutation, 'variables': variables},
             headers=headers
         )
-        customer_id = normal_user['user_id']
+        customer_id = str(normal_user['user_id'])
         query = """
                     {
             getOrders {
@@ -75,15 +75,14 @@ class TestDataIntegrity:
         }
 
         headers = {'Authorization': f'Bearer {normal_token}'}
-        response1 = client.post('/graphql',
+        client.post('/graphql',
             json={'query': mutation, 'variables': variables},
             headers=headers
         )
         headers_admin = {'Authorization': f'Bearer {admin_token}'}
         client.post('/graphql',
         json={'query': mutation, 'variables': variables},
-        headers=headers_admin
-    )
+        headers=headers_admin)
         query = """
                     {
             getOrders {
@@ -92,12 +91,12 @@ class TestDataIntegrity:
                           }
                          }
                   """
-        response = client.post('/graphql', json={'query': query}, headers=headers) 
+        response = client.post('/graphql', json={'query': query}, headers=headers_admin) 
         orders = response.json['data']['getOrders']
         assert len(orders) >= 2
         customer_ids = [order['customerId'] for order in orders]
-        assert admin_user['user_id'] in customer_ids
-        assert normal_user['user_id'] in customer_ids
+        assert str(admin_user['user_id']) in customer_ids
+        assert str(normal_user['user_id']) in customer_ids
 
     def test_order_items_link_to_products(self, client, normal_token, test_product):
         # Create an order with items
@@ -135,16 +134,17 @@ class TestDataIntegrity:
         # Query database
         db = SessionLocal()
         order = db.query(Orders).filter(Orders.order_id == UUID(order_id)).first()
-        db.close()
         
         # Assertions:
         assert len(order.items) > 0  # type: ignore
-        
+        assert order.items[0].product_id is not None # type: ignore
+
+        db.close()
         for item in order.items:    #type: ignore
             # Each item should reference a real product
             db = SessionLocal()
             product = db.query(Products).filter(Products.product_id == item.product_id).first()
             db.close()
-            
+           
         assert product is not None  # Product exists
         assert item.product_id == UUID(product_id)  # Correct product

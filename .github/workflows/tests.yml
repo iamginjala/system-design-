@@ -56,5 +56,7 @@ jobs:
           DATABASE_URL: postgresql+psycopg2://ecommerce_user:ecommerce_pass@localhost:5432/ecommerce
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          SECRET_KEY: test-secret-key-for-ci
+          JWT_EXPIRATION_HOURS: 24
         run: |
           python -m pytest tests/ -v --cov=. --cov-report=term

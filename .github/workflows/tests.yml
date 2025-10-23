@@ -59,4 +59,9 @@ jobs:
           SECRET_KEY: test-secret-key-for-ci
           JWT_EXPIRATION_HOURS: 24
         run: |
-          python -m pytest tests/ -v --cov=. --cov-report=term
+          python -m pytest tests/ -v --cov=. --cov-report=term --cov-report=xml
+      - name: upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./ecommerce-api/coverage.xml
+          fail_ci_if_error: false

@@ -224,6 +224,8 @@ docker-compose down
 
 ## Deployment
 
+ <!-- CI/CD Pipeline Active -->
+
 ### Deploy to Render.com
 
 1. **Create PostgreSQL Database**

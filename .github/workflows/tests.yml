@@ -1,7 +1,7 @@
 name: My First Github Actions
 on:
   push:
-    branches: [testing-setup]
+    branches: [testing-setup, main]
   pull_request:
     branches: [main]
 jobs:

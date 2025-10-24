@@ -1,5 +1,10 @@
 # E-Commerce API - GraphQL Microservice
 
+[![My First Github Actions](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml/badge.svg)](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/github/iamginjala/system-design-/graph/badge.svg?token=S5Y14KVETX)](https://codecov.io/github/iamginjala/system-design-)
+![Tests: 69 passing](https://img.shields.io/badge/tests-69%20passing-brightgreen)
+![Coverage: 91%](https://img.shields.io/badge/coverage-91%25-brightgreen)
+
 A production-ready Flask-based e-commerce API with GraphQL interface, implementing a dual-database architecture for optimal performance.
 
 ## Live Demo

@@ -65,3 +65,12 @@ jobs:
         with:
           file: ./ecommerce-api/coverage.xml
           fail_ci_if_error: false
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger Render deployment
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}

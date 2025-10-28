@@ -7,7 +7,9 @@ from datetime import datetime,timedelta
 from flask import current_app
 import jwt
 
+
 auth_bp = Blueprint('auth',__name__,url_prefix='/auth')
+
 
 
 
@@ -103,7 +105,6 @@ def login():
                 return jsonify({'status': False, 'message': 'Email is required'}),400
             if not password:
                 return jsonify({'status': False, 'message': 'Email and password are required'}), 400
-            print(f"Login payload types — email: {type(email)}, password: {type(password)}")
             if not isinstance(password, str):
                 return jsonify({'status': False, 'message': 'Expected a string value for password'}), 400
             if not isinstance(email,str):

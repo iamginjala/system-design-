@@ -21,3 +21,8 @@
 [2025-10-27 19:11:15,059] DEBUG: DATABASE_URL configured: postgresql+psycopg2://ecommerce_user:ecommerce_pass@postgres:5432/ecommerce
 [2025-10-27 19:14:24,438] DEBUG: DATABASE_URL configured: postgresql+psycopg2://ecommerce_user:ecommerce_pass@postgres:5432/ecommerce
 [2025-10-27 19:14:41,027] DEBUG: DATABASE_URL configured: postgresql+psycopg2://ecommerce_user:ecommerce_pass@postgres:5432/ecommerce
+[2025-10-28 20:34:46,614] DEBUG: DATABASE_URL configured: postgresql+psycopg2://ecommerce_user:ecommerce_pass@postgres:5432/ecommerce
+[2025-10-28 20:37:18,299] DEBUG: DATABASE_URL configured: postgresql+psycopg2://ecommerce_user:ecommerce_pass@postgres:5432/ecommerce
+[2025-10-28 20:37:18,584] INFO: Database tables created successfully
+[2025-10-28 20:37:19,766] DEBUG: DATABASE_URL configured: postgresql+psycopg2://ecommerce_user:ecommerce_pass@postgres:5432/ecommerce
+[2025-10-28 20:37:21,031] DEBUG: DATABASE_URL configured: postgresql+psycopg2://ecommerce_user:ecommerce_pass@postgres:5432/ecommerce

@@ -1,0 +1,6 @@
+[2025-10-28 20:40:07,507] INFO: incoming request : GET path: /health IP: 172.18.0.1
+[2025-10-28 20:40:07,538] INFO: response for GET /health completed in 28.58ms with status 200 OK
+[2025-10-28 20:40:34,817] INFO: incoming request : GET path: / IP: 172.18.0.1
+[2025-10-28 20:40:34,902] INFO: response for GET / completed in 73.80ms with status 200 OK
+[2025-10-28 20:40:55,187] INFO: incoming request : GET path: /graphql IP: 172.18.0.1
+[2025-10-28 20:40:55,208] INFO: response for GET /graphql completed in 1.21ms with status 400 BAD REQUEST

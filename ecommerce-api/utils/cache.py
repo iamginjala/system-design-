@@ -26,7 +26,7 @@ else:
 def test_connection():
     try:
         return redis_client.ping()
-    except redis.ConnectionError:
+    except Exception:
         return False
 
 ## basic cache functions 

@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv
 import time
 from utils.logger import get_request_logger,get_error_logger,get_app_logger
+from datetime import datetime
 
 
 load_dotenv()
@@ -20,7 +21,8 @@ def create_app():
     app.register_blueprint(payment_bp)
     app.register_blueprint(auth_bp)
     logger = get_request_logger()
-    
+    app_logger = get_app_logger()
+    err_logger = get_error_logger()
 
     class CustomGraphQLView(GraphQLView):
         def get_context(self, request, response):
@@ -59,25 +61,55 @@ def create_app():
 
     @app.errorhandler(Exception)
     def handle_exception(e):
-        err_logger = get_error_logger()
+        if hasattr(e, 'code') and e.code == 404:
+            return jsonify({'error': 'Not found'}), 404
         err_logger.error(f"exception {e} for {request.method} and path {request.path}",exc_info=True)
-
         return jsonify({'error': 'Internal server error'}), 500
 
 
     @app.route('/health')
     def check_health():
+        response = {
+
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'services':{
+                'database':{
+                    'status':"",
+                    'type':'PostgreSQL'
+                },
+                'redis':
+                {
+                    'status':"",
+                    'type': 'Redis'
+                }
+            }
+        }
         try:
             with database.engine.connect() as connection:
-                ans = "connection successful"
+                response['services']['database']['status'] = "connected"
+                app_logger.debug("Database is UP")
         except SQLAlchemyError as e:
-            ans =f"connection unsuccessful {e} "
-        if cache.test_connection():
-            redis_answer = "success"
+            response['services']['database']['status']  ="disconnected"
+            response['status'] = 'unhealthy'
+            err_logger.error('Database is Down')
+        try:
+            if cache.test_connection():
+                response['services']['redis']['status'] = "connected"
+                app_logger.debug('Redis is UP') 
+            else:
+                response['services']['redis']['status']  ="disconnected"
+                response['status'] = 'unhealthy'
+                err_logger.error('Redis is Down')
+        except Exception as e:
+            response['services']['redis']['status']  ="disconnected"
+            response['status'] = 'unhealthy'
+            err_logger.error('Redis connection error: {e}',exc_info=True)
+        if response['status'] == 'healthy':
+            return jsonify(response),200
         else:
-            redis_answer = "Unsuccessful"
-    
-        return f"database connection {ans} and redis connection {redis_answer}"
+            return jsonify(response),503
+        
 
     @app.route("/")
     def home():

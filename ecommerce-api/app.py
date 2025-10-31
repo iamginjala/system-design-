@@ -118,6 +118,24 @@ def create_app():
     @app.route("/")
     def home():
         return render_template('index.html')
+    
+    @app.route("/metrics")
+    def display_metrics():
+        app_logger.info('Metrics end point was accessed')
+        metric_data = {
+            'uptime_seconds' : round(metrics_collector.get_uptime(),2),
+            'total_requests' : metrics_collector.total_requests,
+            'requests_by_endpoint':metrics_collector.requests_by_endpoint,
+            'performance':{
+            'average_response_time' : metrics_collector.get_average_response_time(),
+            'graphql_average_response_time' : metrics_collector.get_graphql_average_response_time(),
+            }
+            
+           }
+        return jsonify(metric_data),200
+        
+
+
     return app
 
 

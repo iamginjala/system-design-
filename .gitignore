@@ -6,3 +6,6 @@ __pycache__
 # Logs
 logs/
 *.log
+
+# Learning Reports
+WEEK_4_REPORT.md

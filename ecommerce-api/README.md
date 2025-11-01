@@ -1,9 +1,18 @@
 # E-Commerce API - GraphQL Microservice
 
-[![My First Github Actions](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml/badge.svg)](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml)
+[![CI/CD Pipeline](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml/badge.svg)](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/github/iamginjala/system-design-/graph/badge.svg?token=S5Y14KVETX)](https://codecov.io/github/iamginjala/system-design-)
 ![Tests: 69 passing](https://img.shields.io/badge/tests-69%20passing-brightgreen)
 ![Coverage: 91%](https://img.shields.io/badge/coverage-91%25-brightgreen)
+![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue)
+![Flask](https://img.shields.io/badge/flask-3.0+-black)
+![GraphQL](https://img.shields.io/badge/GraphQL-Strawberry-ff69b4)
+![PostgreSQL](https://img.shields.io/badge/postgresql-15-336791)
+![Redis](https://img.shields.io/badge/redis-7-dc382d)
+![Docker](https://img.shields.io/badge/docker-compose-2496ED)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Deployment](https://img.shields.io/badge/deploy-Render.com-46E3B7)
+![Status](https://img.shields.io/badge/status-production-success)
 
 A production-ready Flask-based e-commerce API with GraphQL interface, implementing a dual-database architecture for optimal performance.
 

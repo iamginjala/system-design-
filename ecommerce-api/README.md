@@ -54,33 +54,300 @@ A production-ready Flask-based e-commerce API with GraphQL interface, implementi
 - `quantity` (Integer)
 - `price_at_purchase` (Float)
 
+## Authentication Guide
+
+### Overview
+
+This API uses **JWT (JSON Web Token)** authentication for secure access control. Tokens are valid for **24 hours** and include role-based permissions.
+
+**Two User Roles:**
+- **Customer**: Can create orders, view their own orders
+- **Admin**: Can manage products (create/update/delete), view all orders
+
+### Step 1: Register a New User
+
+Create a new account by sending a POST request to `/auth/register`.
+
+**Password Requirements:**
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character (@$!%*?&#)
+
+**Example Request:**
+
+```bash
+curl -X POST http://localhost:5000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "SecurePass123!"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "message": "User registered successfully"
+}
+```
+
+### Step 2: Login to Get JWT Token
+
+Login with your credentials to receive an access token.
+
+**Example Request:**
+
+```bash
+curl -X POST http://localhost:5000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "SecurePass123!"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "user_id": "a94102ff-32e3-4240-b251-dd8934065961",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "customer"
+  }
+}
+```
+
+**Important:** Copy the `access_token` - you'll need it for authenticated requests!
+
+### Step 3: Using the JWT Token
+
+Include the token in the `Authorization` header for all authenticated requests.
+
+**Header Format:**
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Example GraphQL Request with Authentication:**
+
+```bash
+curl -X POST http://localhost:5000/graphql \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{
+    "query": "mutation { createOrder(input: { items: [{ productId: \"uuid-here\", quantity: 2 }] }) { orderId totalAmount status } }"
+  }'
+```
+
+**In GraphQL Playground:**
+
+Add to HTTP Headers section:
+
+```json
+{
+  "Authorization": "Bearer YOUR_TOKEN_HERE"
+}
+```
+
+### Role-Based Access Control
+
+**Customer Permissions:**
+- ✅ Create orders
+- ✅ View their own orders
+- ❌ Create/update/delete products
+- ❌ View other customers' orders
+
+**Admin Permissions:**
+- ✅ All customer permissions
+- ✅ Create/update/delete products
+- ✅ View all orders from all customers
+
+**Unauthorized Access Example:**
+
+If a customer tries to create a product:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Admin access required",
+      "path": ["createProduct"]
+    }
+  ]
+}
+```
+
+### Token Expiration
+
+Tokens expire after **24 hours**. When expired, you'll receive:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Token has expired",
+      "extensions": {
+        "code": "UNAUTHORIZED"
+      }
+    }
+  ]
+}
+```
+
+**Solution:** Login again to get a fresh token.
+
+### Creating an Admin User
+
+By default, new registrations create **customer** accounts. To create an admin:
+
+1. Register normally via `/auth/register`
+2. Manually update the database:
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
+```
+
+(In production, implement a separate admin invitation system)
+
+---
+
 ## API Endpoints
 
 ### GraphQL Endpoint
 
 All operations through: `/graphql`
 
+**Authentication:** Include `Authorization: Bearer <token>` header for:
+- Creating orders
+- Viewing orders
+- All product mutations (create/update/delete)
+
 ### REST Endpoints
 
 - `GET /` - Home page
 - `GET /health` - Health check (database + Redis status)
+- `GET /metrics` - Performance metrics and statistics
+- `POST /auth/register` - Create new user account
+- `POST /auth/login` - Login and receive JWT token
 
-## GraphQL Examples
+### Monitoring Endpoints
 
-### Create a Product
+#### Health Check (`/health`)
 
-```graphql
-mutation {
-  createProduct(input: { price: 29.99, stockCount: 100 }) {
-    productId
-    price
-    stockCount
-    lastUpdated
-  }
+Returns system health status including database and cache connectivity.
+
+**Example Response:**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-10-31T19:26:14.123456",
+  "database": "connected",
+  "cache": "connected"
 }
 ```
 
-### Query All Products (with Redis caching)
+#### Metrics (`/metrics`)
+
+Returns real-time performance metrics and request statistics.
+
+**Example Response:**
+
+```json
+{
+  "performance": {
+    "average_response_time": 75.81,
+    "graphql_average_response_time": 58.09
+  },
+  "requests_by_endpoint": {
+    "/auth/login": 3,
+    "/auth/register": 2,
+    "/graphql": 52,
+    "/health": 1,
+    "/metrics": 6
+  },
+  "total_requests": 64,
+  "uptime_seconds": 8700.77
+}
+```
+
+**Metrics Tracked:**
+- Average response time (all endpoints)
+- GraphQL-specific response time
+- Request count per endpoint
+- Total requests served
+- Server uptime
+
+## Testing with Postman
+
+Pre-configured Postman collections are available in the repository root for easy API testing:
+
+### 📦 Available Collections
+
+**1. Authentication.postman_collection.json**
+- Register User
+- User Login
+- Admin User Login
+
+**2. GraphQL Operations.postman_collection.json**
+- Get All Products (No Auth)
+- Create Product (Admin)
+- Update Product (Admin)
+- Delete Product (Admin)
+- Create Order (User)
+- Get My Orders (User)
+
+### 🚀 How to Use
+
+1. **Download Postman Desktop**: https://www.postman.com/downloads/
+
+2. **Import Collections**:
+   - Open Postman
+   - Click "Import" button
+   - Select both JSON files from the repository root
+   - Collections will appear in your sidebar
+
+3. **Set Base URL** (Optional):
+   - Create an environment variable `{{baseUrl}}` = `http://localhost:5000`
+   - Or use the hardcoded URLs in the collection
+
+4. **Test Workflow**:
+   ```
+   Step 1: Register User → Get user credentials
+   Step 2: User Login → Copy access_token
+   Step 3: Use token in Authorization header for other requests
+   ```
+
+5. **For Admin Operations**:
+   - First create admin user via database:
+     ```sql
+     UPDATE users SET role = 'admin' WHERE email = 'admin@gmail.com';
+     ```
+   - Login with admin credentials
+   - Use admin token for product mutations
+
+### 💡 Tips
+
+- Start your API first: `docker-compose up -d`
+- GraphQL requests use Postman's **GraphQL body type** (not raw JSON)
+- Tokens expire after 24 hours - login again if expired
+- Check `http://localhost:5000/health` to verify API is running
+
+---
+
+## GraphQL Examples
+
+### Query All Products (No authentication required)
+
+Redis caching enabled with 60-second TTL for optimal performance.
 
 ```graphql
 query {
@@ -93,7 +360,22 @@ query {
 }
 ```
 
-### Get Product by ID
+### Create a Product (Admin only)
+
+**Requires:** `Authorization: Bearer <admin_token>`
+
+```graphql
+mutation {
+  createProduct(input: { price: 29.99, stockCount: 100 }) {
+    productId
+    price
+    stockCount
+    lastUpdated
+  }
+}
+```
+
+### Get Product by ID (No authentication required)
 
 ```graphql
 query {
@@ -105,7 +387,9 @@ query {
 }
 ```
 
-### Update Product
+### Update Product (Admin only)
+
+**Requires:** `Authorization: Bearer <admin_token>`
 
 ```graphql
 mutation {
@@ -119,13 +403,16 @@ mutation {
 }
 ```
 
-### Create an Order
+### Create an Order (Authenticated users)
+
+**Requires:** `Authorization: Bearer <user_token>`
+
+Server automatically calculates `totalAmount` and validates stock availability.
 
 ```graphql
 mutation {
   createOrder(
     input: {
-      customerId: "a94102ff-32e3-4240-b251-dd8934065961"
       items: [
         { productId: "YOUR_PRODUCT_ID", quantity: 2 }
         { productId: "ANOTHER_PRODUCT_ID", quantity: 1 }
@@ -146,7 +433,12 @@ mutation {
 }
 ```
 
-### Query All Orders
+### Query Orders (Role-aware)
+
+**Requires:** `Authorization: Bearer <token>`
+
+- **Customers** see only their own orders
+- **Admins** see all orders
 
 ```graphql
 query {
@@ -165,7 +457,9 @@ query {
 }
 ```
 
-### Get Order by ID
+### Get Order by ID (Authenticated users)
+
+**Requires:** `Authorization: Bearer <token>`
 
 ```graphql
 query {
@@ -266,23 +560,54 @@ Features
 
 ```
 ecommerce-api/
-app.py                  # Main Flask application
-init_db.py             # Database initialization
-Dockerfile             # Container configuration
-docker-compose.yml     # Multi-container setup
-requirements.txt       # Python dependencies
-models/                # SQLAlchemy models
- product.py
- order.py
- order_item.py
-graphql_api/           # GraphQL layer
- schema.py
- types.py
- queries.py
- mutations.py
-utils/                 # Utilities
- database.py        # PostgreSQL connection
- cache.py           # Redis connection
+├── app.py                      # Main Flask application & blueprint registration
+├── init_db.py                  # Database initialization script
+├── config.py                   # Configuration management
+├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Container configuration
+├── docker-compose.yml          # Multi-container orchestration
+│
+├── models/                     # SQLAlchemy ORM models (PostgreSQL)
+│   ├── product.py              # Products (price, stock, UUID)
+│   ├── order.py                # Orders (customer_id, status, tracking)
+│   ├── order_item.py           # OrderItems (junction with price snapshots)
+│   ├── user.py                 # Users (JWT auth, role-based)
+│   └── payment.py              # Payments (transaction tracking)
+│
+├── graphql_api/                # GraphQL API layer (Primary interface)
+│   ├── schema.py               # Combined schema (Query + Mutation)
+│   ├── types.py                # GraphQL types with field descriptions
+│   ├── queries.py              # Read operations (with Redis caching)
+│   └── mutations.py            # Write operations (admin-authorized)
+│
+├── routes/                     # REST API endpoints (Fallback)
+│   ├── auth.py                 # POST /auth/register, /auth/login
+│   ├── products.py             # GET /api/product/<id>
+│   ├── orders.py               # GET /api/orders/<id>/track
+│   └── payments.py             # POST /api/payments/international
+│
+├── utils/                      # Utility modules
+│   ├── database.py             # PostgreSQL connection & session factory
+│   ├── cache.py                # Redis client & caching functions
+│   ├── auth.py                 # JWT token generation & verification
+│   ├── logger.py               # Structured logging configuration
+│   └── metrics.py              # Performance tracking & metrics collection
+│
+├── tests/                      # Comprehensive test suite (91% coverage)
+│   ├── conftest.py             # Pytest fixtures & test configuration
+│   ├── test_auth.py            # Authentication tests
+│   ├── test_graphql_api.py     # GraphQL operations
+│   ├── test_cache.py           # Redis caching
+│   ├── test_database.py        # Database operations
+│   ├── test_redis.py           # Redis connection
+│   ├── test_e2e_flows.py       # End-to-end workflows
+│   └── test_edge_cases.py      # Error handling & edge cases
+│
+├── logs/                       # Application logs (auto-generated)
+│   └── app.log                 # Rotating log files
+│
+└── .github/workflows/
+    └── tests.yml               # CI/CD pipeline (tests → deploy)
 ```
 
 ## Security Features
@@ -292,15 +617,34 @@ utils/                 # Utilities
 - UUID-based identifiers
 - Environment-based configuration
 
+## Implemented Features
+
+- ✅ JWT authentication with role-based access control
+- ✅ User registration with password validation
+- ✅ GraphQL API with Strawberry framework
+- ✅ Dual-database architecture (PostgreSQL + Redis)
+- ✅ Redis caching with automatic invalidation
+- ✅ Order management with price snapshots
+- ✅ Stock validation and deduction
+- ✅ Structured logging system
+- ✅ Health check endpoint
+- ✅ Performance metrics endpoint
+- ✅ Comprehensive test suite (91% coverage, 69 tests)
+- ✅ CI/CD pipeline with GitHub Actions
+- ✅ Docker containerization
+
 ## Future Enhancements
 
-- [ ] User authentication & authorization
-- [ ] Payment processing integration
-- [ ] Inventory management
-- [ ] Order tracking system
-- [ ] Admin dashboard
-- [ ] Rate limiting
+- [ ] Payment gateway integration (Stripe/PayPal)
+- [ ] Order workflow automation (pending → confirmed → shipped → delivered)
+- [ ] Email notifications (order confirmations, shipping updates)
+- [ ] Admin dashboard UI
+- [ ] Product search & filtering
+- [ ] Pagination for large datasets
+- [ ] Rate limiting implementation
+- [ ] WebSocket support for real-time updates
 - [ ] Production WSGI server (Gunicorn)
+- [ ] Monitoring dashboard (Grafana/Prometheus)
 
 ## Screenshots
 

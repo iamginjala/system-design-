@@ -1,0 +1,255 @@
+{
+	"info": {
+		"_postman_id": "421f2596-0ffd-4ee7-8d6d-56004d9e3d14",
+		"name": "GraphQL Operations",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "44517130",
+		"_collection_link": "https://harsha-9755885.postman.co/workspace/E-commerce-API~eb18ad32-a745-4ce3-bf41-4603f7c23137/collection/44517130-421f2596-0ffd-4ee7-8d6d-56004d9e3d14?action=share&source=collection_link&creator=44517130"
+	},
+	"item": [
+		{
+			"name": "Get All Products(No Auth Needed",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "{\r\n  query { getProducts { productId price stockCount lastUpdated } }\r\n}",
+						"variables": ""
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/graphql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"graphql"
+					]
+				},
+				"description": "**All GraphQL requests use the same base setup:**\n\n- Method: `POST`\n    \n- URL: `http://localhost:5000/graphql`\n    \n- Headers: `Content-Type: application/json` (and `Authorization` when needed)\n    \n- Body format: GraphQL"
+			},
+			"response": []
+		},
+		{
+			"name": "Create product(Admin only)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{vault:authorization-secret}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation CreateProduct($input: ProductInput!) {\r\n  createProduct(input: $input) {\r\n    productId\r\n    price\r\n    stockCount\r\n    lastUpdated\r\n  }\r\n}",
+						"variables": "{\r\n  \"input\": {\r\n    \"price\": 299.99,\r\n    \"stockCount\": 50\r\n  }\r\n}"
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/graphql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"graphql"
+					]
+				},
+				"description": "Admijn token needed default evry user role is customer"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Product(Admin only)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZjNmZWUyN2YtYjFlNC00N2RhLTg2NWQtMTE3MmRjN2NiZDJiIiwibmFtZSI6IkFkbWluX3VzZXIiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NjIwMzc3OTUsImlhdCI6MTc2MTk1MTM5NX0.naMFZsxqJ_dlGBu3RSrqpo9pXcQT8XRnZE_q3pGqkhg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation UpdateProduct($input: ProductUpdateInput!) {\r\n  updateProduct(input: $input) {\r\n    productId\r\n    price\r\n    stockCount\r\n    lastUpdated\r\n  }\r\n}",
+						"variables": "{\r\n  \"input\": {\r\n    \"productId\": \"597ad571-952c-4add-aba6-fb49fc001e15\",\r\n    \"price\": 349.99,\r\n    \"stockCount\": 75\r\n  }\r\n}"
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/graphql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Product(Admin only)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZjNmZWUyN2YtYjFlNC00N2RhLTg2NWQtMTE3MmRjN2NiZDJiIiwibmFtZSI6IkFkbWluX3VzZXIiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NjIwMzc3OTUsImlhdCI6MTc2MTk1MTM5NX0.naMFZsxqJ_dlGBu3RSrqpo9pXcQT8XRnZE_q3pGqkhg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation DeleteProduct($productId: String!) {\r\n  deleteProduct(productId: $productId)\r\n}",
+						"variables": "{\r\n  \"productId\": \"44dbe996-8299-4206-9a63-bc04bc725c42\"\r\n}"
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/graphql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Order(User)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTk4YWI3YmUtODVkNS00ZGRlLWI4MjQtNWY3OGJiMGY4MWU1IiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJjdXN0b21lciIsImV4cCI6MTc2MjAzNDQxNCwiaWF0IjoxNzYxOTQ4MDE0fQ.ZGhAY7N_LoQL8TChjbMogo_p3AcDpwafRK6eu7qxB1Y",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation CreateOrder($input: CreateOrderInput!) {\r\n  createOrder(input: $input) {\r\n    orderId\r\n    customerId\r\n    totalAmount\r\n    status\r\n    createdAt\r\n    items {\r\n      id\r\n      productId\r\n      quantity\r\n      priceAtPurchase\r\n      product {\r\n        productId\r\n        price\r\n        stockCount\r\n      }\r\n    }\r\n  }\r\n}",
+						"variables": "{\r\n  \"input\": {\r\n    \"items\": [\r\n      {\r\n        \"productId\": \"597ad571-952c-4add-aba6-fb49fc001e15\",\r\n        \"quantity\": 2\r\n      }\r\n    ]\r\n  }\r\n}"
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/graphql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get My Orders(User)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTk4YWI3YmUtODVkNS00ZGRlLWI4MjQtNWY3OGJiMGY4MWU1IiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJjdXN0b21lciIsImV4cCI6MTc2MjAzNDQxNCwiaWF0IjoxNzYxOTQ4MDE0fQ.ZGhAY7N_LoQL8TChjbMogo_p3AcDpwafRK6eu7qxB1Y",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "query {\r\n  getOrders {\r\n    orderId\r\n    customerId\r\n    totalAmount\r\n    status\r\n    createdAt\r\n    lastUpdated\r\n    items {\r\n      id\r\n      productId\r\n      quantity\r\n      priceAtPurchase\r\n      product {\r\n        productId\r\n        price\r\n        stockCount\r\n      }\r\n    }\r\n  }\r\n}",
+						"variables": ""
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/graphql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

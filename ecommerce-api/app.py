@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import time
 from utils.logger import get_request_logger,get_error_logger,get_app_logger
 from datetime import datetime
-
+from utils.metrics import MetricsCollector
 
 load_dotenv()
 
@@ -23,6 +23,8 @@ def create_app():
     logger = get_request_logger()
     app_logger = get_app_logger()
     err_logger = get_error_logger()
+
+    metrics_collector = MetricsCollector()
 
     class CustomGraphQLView(GraphQLView):
         def get_context(self, request, response):
@@ -46,17 +48,19 @@ def create_app():
     
     @app.before_request
     def log_request():
-        
-        logger.info(f"incoming request : {request.method} path: {request.path} IP: {request.remote_addr}")
+        path = request.path
+        logger.info(f"incoming request : {request.method} path: {path} IP: {request.remote_addr}")
         g.start_time = time.time()
+        metrics_collector.record_request(endpoint=path)
     
     @app.after_request
     def log_response(response):
         # Use flask.g to store request-specific data (avoids accessing private Request attributes)
         response_time = time.time() - getattr(g, "start_time", time.time())
         response_time_ms = response_time * 1000
-        logger.info(f"response for {request.method} {request.path} completed in {response_time_ms:.2f}ms with status {response.status}")
-        # logger.info(f"response for {request.method} {request.path} completed in {response_time:.4f}s with status {response.statu0s}")
+        path = request.path
+        logger.info(f"response for {request.method} {path} completed in {response_time_ms:.2f}ms with status {response.status}")
+        metrics_collector.record_response_time(path,response_time_ms)
         return response
 
     @app.errorhandler(Exception)
@@ -114,6 +118,24 @@ def create_app():
     @app.route("/")
     def home():
         return render_template('index.html')
+    
+    @app.route("/metrics")
+    def display_metrics():
+        app_logger.info('Metrics end point was accessed')
+        metric_data = {
+            'uptime_seconds' : round(metrics_collector.get_uptime(),2),
+            'total_requests' : metrics_collector.total_requests,
+            'requests_by_endpoint':metrics_collector.requests_by_endpoint,
+            'performance':{
+            'average_response_time' : metrics_collector.get_average_response_time(),
+            'graphql_average_response_time' : metrics_collector.get_graphql_average_response_time(),
+            }
+            
+           }
+        return jsonify(metric_data),200
+        
+
+
     return app
 
 

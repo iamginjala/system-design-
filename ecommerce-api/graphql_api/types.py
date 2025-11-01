@@ -9,14 +9,14 @@ from models.order_item import OrderItem
 
 @strawberry.type
 class Product:
-    product_id : str
-    stock_count : int
-    price : float
-    last_updated: Optional[datetime] = None
+    product_id : str = strawberry.field(description="unique product identifier (UUID format)")
+    stock_count : int = strawberry.field(description="Current available inventory count")
+    price : float = strawberry.field(description="Product Price in INR")
+    last_updated: Optional[datetime] = strawberry.field(default=None,description="Timestamp of last product update")
 
 def product_to_graphql(db_product: Products) -> Product:
     return Product(
-        product_id=str(db_product.product_id),
+        product_id=str(db_product.product_id), # type: ignore
         stock_count=db_product.stock_count, # type: ignore
         price= db_product.price, # type: ignore
         last_updated= db_product.last_updated # type: ignore
@@ -24,33 +24,33 @@ def product_to_graphql(db_product: Products) -> Product:
 
 @strawberry.input
 class ProductInput:
-    price: float
-    stock_count: int
+    price: float = strawberry.field(description="Input Product Price in INR")
+    stock_count: int = strawberry.field(description="Input Inventory count")
 
 @strawberry.input
 class ProductUpdateInput:
-    product_id: str
-    stock_count: Optional[int]
-    price: Optional[float]
+    product_id: str = strawberry.field(description="unique product identifier (UUID format)")
+    stock_count: Optional[int] = strawberry.field(description="Update Inventory count")
+    price: Optional[float] = strawberry.field(description="Update Product Price in INR")
 
 """ types for order and orderitem"""
 @strawberry.type
 class Orderitem:
-    id: str
-    product_id: str 
-    quantity: int
-    price_at_purchase: float
-    product: Product
+    id: str = strawberry.field(description="unique order identifier (UUID format)")
+    product_id: str = strawberry.field(description="unique product identifier (UUID format) links to product_id in product model")
+    quantity: int = strawberry.field(description="how many products placed")
+    price_at_purchase: float = strawberry.field(description="Product Price at the time of purchase in INR(immutable)")
+    product: Product =strawberry.field(description="links to product type class")
 
 @strawberry.type
 class Order:
-     order_id: str
-     customer_id: str
-     total_amount: float
-     status: str
-     created_at: Optional[datetime] = None
-     last_updated: Optional[datetime] = None
-     items: list[Orderitem]
+     order_id: str = strawberry.field(description="unique order identifier (UUID format)")
+     customer_id: str = strawberry.field(description="unique customer identifier (UUID format)")
+     total_amount: float = strawberry.field(description="total amount placed for the order(immutable)")
+     status: str = strawberry.field(description="status of the order")
+     created_at: Optional[datetime] = strawberry.field(default=None,description="Timestamp of last order created")
+     last_updated: Optional[datetime] = strawberry.field(default=None,description="Timestamp of last order update")
+     items: list[Orderitem] = strawberry.field(description="links to the list of orderitem type class")
 
 def orders_to_graphql(db_orders: Orders) ->  Order:
     return Order(order_id=str(db_orders.order_id), # type: ignore 
@@ -71,9 +71,9 @@ def orderitem_to_graphql(db_orderitems: OrderItem) -> Orderitem:
 
 @strawberry.input
 class OrderItemInput:
-    product_id: str
-    quantity: int
+    product_id: str =  strawberry.field(description="unique product identifier (UUID format)")
+    quantity: int = strawberry.field(description="how many products placed")
 
 @strawberry.input
 class CreateOrderInput:
-    items: list[OrderItemInput]
+    items: list[OrderItemInput] = strawberry.field(description="links to the list of orderiteminput type class")

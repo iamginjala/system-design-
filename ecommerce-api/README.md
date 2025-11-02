@@ -1,9 +1,18 @@
 # E-Commerce API - GraphQL Microservice
 
-[![My First Github Actions](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml/badge.svg)](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml)
+[![CI/CD Pipeline](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml/badge.svg)](https://github.com/iamginjala/system-design-/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/github/iamginjala/system-design-/graph/badge.svg?token=S5Y14KVETX)](https://codecov.io/github/iamginjala/system-design-)
 ![Tests: 69 passing](https://img.shields.io/badge/tests-69%20passing-brightgreen)
 ![Coverage: 91%](https://img.shields.io/badge/coverage-91%25-brightgreen)
+![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue)
+![Flask](https://img.shields.io/badge/flask-3.0+-black)
+![GraphQL](https://img.shields.io/badge/GraphQL-Strawberry-ff69b4)
+![PostgreSQL](https://img.shields.io/badge/postgresql-15-336791)
+![Redis](https://img.shields.io/badge/redis-7-dc382d)
+![Docker](https://img.shields.io/badge/docker-compose-2496ED)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Deployment](https://img.shields.io/badge/deploy-Render.com-46E3B7)
+![Status](https://img.shields.io/badge/status-production-success)
 
 A production-ready Flask-based e-commerce API with GraphQL interface, implementing a dual-database architecture for optimal performance.
 
@@ -15,20 +24,154 @@ A production-ready Flask-based e-commerce API with GraphQL interface, implementi
 
 ## Architecture
 
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Client[Client Applications]
+        Postman[Postman/GraphQL Playground]
+    end
+
+    subgraph "Docker Container Network"
+        subgraph "Flask Application :5000"
+            Flask[Flask App]
+            Auth[JWT Authentication]
+            Logger[Structured Logging]
+            Metrics[Metrics Tracker]
+
+            subgraph "API Layer"
+                GraphQL[GraphQL API<br/>Strawberry]
+                REST[REST Endpoints<br/>/auth, /health, /metrics]
+            end
+
+            subgraph "Business Logic"
+                Queries[GraphQL Queries]
+                Mutations[GraphQL Mutations]
+                RBAC[Role-Based Access Control]
+            end
+        end
+
+        subgraph "Data Layer"
+            Postgres[(PostgreSQL 15<br/>Dynamic Data)]
+            Redis[(Redis 7<br/>Cache Layer)]
+        end
+    end
+
+    subgraph "External Services"
+        GitHub[GitHub Actions<br/>CI/CD]
+        Render[Render.com<br/>Production Deploy]
+    end
+
+    Client --> GraphQL
+    Client --> REST
+    Postman --> GraphQL
+    Postman --> REST
+
+    GraphQL --> Auth
+    REST --> Auth
+    Auth --> RBAC
+
+    Queries --> Postgres
+    Queries --> Redis
+    Mutations --> Postgres
+    Mutations --> Redis
+
+    GraphQL --> Queries
+    GraphQL --> Mutations
+
+    Flask --> Logger
+    Flask --> Metrics
+
+    Postgres -.->|Cache<br/>Product Data| Redis
+    Redis -.->|60s TTL<br/>Auto-Invalidation| Postgres
+
+    GitHub -->|Push to main| Render
+    Render -.->|Auto Deploy| Flask
+
+    style GraphQL fill:#e1f5ff
+    style Postgres fill:#336791,color:#fff
+    style Redis fill:#dc382d,color:#fff
+    style Auth fill:#90EE90
+    style RBAC fill:#FFD700
+```
+
 ### Dual-Database Design
 
-- **PostgreSQL**: Dynamic data (orders, inventory, transactions)
-- **Redis**: Static data caching (product catalog, session data)
+- **PostgreSQL**: Dynamic data (orders, inventory, transactions, users, payments)
+- **Redis**: Static data caching (product catalog with 60s TTL, automatic invalidation)
 
 ### Tech Stack
 
-- **Backend**: Flask + SQLAlchemy
-- **API**: GraphQL (Strawberry)
+- **Backend**: Flask + SQLAlchemy ORM
+- **API**: GraphQL (Strawberry) + REST fallback
+- **Authentication**: JWT with role-based access control
 - **Databases**: PostgreSQL 15, Redis 7
+- **Testing**: Pytest (91% coverage, 69 tests)
+- **Monitoring**: Structured logging + performance metrics
 - **Deployment**: Render.com (Free Tier)
 - **Containerization**: Docker + Docker Compose
+- **CI/CD**: GitHub Actions
 
 ## Database Schema
+
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    USERS ||--o{ ORDERS : creates
+    ORDERS ||--|{ ORDER_ITEMS : contains
+    PRODUCTS ||--o{ ORDER_ITEMS : "ordered in"
+    ORDERS ||--o{ PAYMENTS : has
+
+    USERS {
+        uuid user_id PK
+        string name
+        string email UK
+        string password_hash
+        string role "customer|admin"
+        datetime created_at
+        datetime last_login
+    }
+
+    PRODUCTS {
+        uuid product_id PK
+        float price
+        int stock_count
+        datetime last_updated
+    }
+
+    ORDERS {
+        uuid order_id PK
+        uuid customer_id FK
+        float total_amount "Server-calculated"
+        string status "pending|confirmed|shipped|delivered"
+        string tracking_info
+        datetime created_at
+        datetime last_updated
+    }
+
+    ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        float price_at_purchase "Immutable snapshot"
+    }
+
+    PAYMENTS {
+        uuid payment_id PK
+        uuid order_id FK
+        string customer_id
+        float amount
+        string currency "Default: INR"
+        string payment_method "Default: UPI"
+        string payment_status "Pending|Completed|Failed"
+        string transaction_id
+        datetime created_at
+        datetime updated_at
+    }
+```
 
 ### Products Table
 
@@ -55,6 +198,65 @@ A production-ready Flask-based e-commerce API with GraphQL interface, implementi
 - `price_at_purchase` (Float)
 
 ## Authentication Guide
+
+### Authentication Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Flask API
+    participant Auth as JWT Auth
+    participant DB as PostgreSQL
+    participant GQL as GraphQL Resolver
+
+    Note over C,GQL: Registration Flow
+    C->>API: POST /auth/register<br/>{email, password, name}
+    API->>API: Validate password<br/>(8+ chars, complexity)
+    API->>DB: Check if email exists
+    DB-->>API: Email available
+    API->>API: Hash password (Werkzeug scrypt)
+    API->>DB: INSERT user (role: customer)
+    DB-->>API: User created
+    API-->>C: 201 Created
+
+    Note over C,GQL: Login Flow
+    C->>API: POST /auth/login<br/>{email, password}
+    API->>DB: SELECT user WHERE email
+    DB-->>API: User record
+    API->>API: Verify password hash
+    API->>Auth: Generate JWT token<br/>(user_id, name, role)
+    Auth-->>API: access_token (24h expiry)
+    API-->>C: {access_token, user}
+
+    Note over C,GQL: Authenticated GraphQL Request
+    C->>GQL: GraphQL Mutation<br/>Header: Bearer <token>
+    GQL->>Auth: Verify JWT token
+    Auth->>Auth: Check expiration<br/>Extract user_id & role
+    Auth-->>GQL: Token valid, user_id, role
+    GQL->>GQL: Check RBAC permissions<br/>(admin vs customer)
+
+    alt Admin operation (e.g., createProduct)
+        GQL->>GQL: Require admin role
+        alt User is admin
+            GQL->>DB: Execute mutation
+            DB-->>GQL: Success
+            GQL-->>C: Product created
+        else User is customer
+            GQL-->>C: Error: Admin access required
+        end
+    else Customer operation (e.g., createOrder)
+        GQL->>DB: Execute mutation
+        DB-->>GQL: Order created
+        GQL-->>C: Order details
+    end
+
+    Note over C,GQL: Token Expiration
+    C->>GQL: Request after 24h
+    GQL->>Auth: Verify token
+    Auth-->>GQL: Token expired
+    GQL-->>C: 401 Unauthorized<br/>Token has expired
+    C->>API: POST /auth/login (re-authenticate)
+```
 
 ### Overview
 
